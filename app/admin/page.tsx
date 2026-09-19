@@ -20,6 +20,7 @@ type Member = {
   profilePicture?: string;
   workoutPlan?: string;
   customWorkoutId?: string;
+  pin?: string;
   paymentHistory?: Payment[];
 };
 
@@ -30,50 +31,41 @@ type AttendanceRecord = {
   time: string;
 };
 
+type CustomWorkout = {
+  id: string;
+  name: string;
+  exercises: {
+    name: string;
+    sets: number;
+    reps: number;
+  }[];
+};
+
 export default function Admin() {
-  const [members, setMembers] =
-    useState<Member[]>([]);
-
-  const [attendance, setAttendance] =
-    useState<AttendanceRecord[]>([]);
-
-  const [isAdmin, setIsAdmin] =
-    useState(false);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [demoLoaded, setDemoLoaded] = useState(false);
 
   useEffect(() => {
-    const admin =
-      localStorage.getItem(
-        "gym-town-admin"
-      );
+    const admin = localStorage.getItem("gym-town-admin");
 
     if (admin !== "true") {
-      window.location.href =
-        "/admin-login";
+      window.location.href = "/admin-login";
       return;
     }
 
     setIsAdmin(true);
 
-    const savedMembers =
-      localStorage.getItem(
-        "gym-town-members"
-      );
-
-    const savedAttendance =
-      localStorage.getItem(
-        "gym-town-attendance"
-      );
+    const savedMembers = localStorage.getItem("gym-town-members");
+    const savedAttendance = localStorage.getItem("gym-town-attendance");
 
     if (savedMembers) {
-      setMembers(
-        JSON.parse(savedMembers)
-      );
+      setMembers(JSON.parse(savedMembers));
     }
 
     if (savedAttendance) {
-      setAttendance(
-        JSON.parse(savedAttendance)
-      );
+      setAttendance(JSON.parse(savedAttendance));
     }
   }, []);
 
@@ -83,46 +75,46 @@ export default function Admin() {
     return (
       now.getFullYear() +
       "-" +
-      String(
-        now.getMonth() + 1
-      ).padStart(2, "0") +
+      String(now.getMonth() + 1).padStart(2, "0") +
       "-" +
-      String(
-        now.getDate()
-      ).padStart(2, "0")
+      String(now.getDate()).padStart(2, "0")
     );
   }
 
+  function getDateOffset(days: number) {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+
+    return (
+      date.getFullYear() +
+      "-" +
+      String(date.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(date.getDate()).padStart(2, "0")
+    );
+  }
+
+  function getTimeOffset(hours: number) {
+    const date = new Date();
+    date.setHours(date.getHours() - hours);
+
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
   function getStatus(expiry: string) {
-    const expiryDate =
-      new Date(expiry);
+    const expiryDate = new Date(expiry);
+    const today = new Date();
 
-    const today =
-      new Date();
+    today.setHours(0, 0, 0, 0);
+    expiryDate.setHours(0, 0, 0, 0);
 
-    today.setHours(
-      0,
-      0,
-      0,
-      0
+    const days = Math.ceil(
+      (expiryDate.getTime() - today.getTime()) /
+        (1000 * 60 * 60 * 24)
     );
-
-    expiryDate.setHours(
-      0,
-      0,
-      0,
-      0
-    );
-
-    const days =
-      Math.ceil(
-        (expiryDate.getTime() -
-          today.getTime()) /
-          (1000 *
-            60 *
-            60 *
-            24)
-      );
 
     if (days < 0) {
       return "Expired";
@@ -135,37 +127,332 @@ export default function Admin() {
     return "Active";
   }
 
-  function getDaysRemaining(
-    expiry: string
-  ) {
-    const expiryDate =
-      new Date(expiry);
+  function getDaysRemaining(expiry: string) {
+    const expiryDate = new Date(expiry);
+    const today = new Date();
 
-    const today =
-      new Date();
-
-    today.setHours(
-      0,
-      0,
-      0,
-      0
-    );
-
-    expiryDate.setHours(
-      0,
-      0,
-      0,
-      0
-    );
+    today.setHours(0, 0, 0, 0);
+    expiryDate.setHours(0, 0, 0, 0);
 
     return Math.ceil(
-      (expiryDate.getTime() -
-        today.getTime()) /
-        (1000 *
-          60 *
-          60 *
-          24)
+      (expiryDate.getTime() - today.getTime()) /
+        (1000 * 60 * 60 * 24)
     );
+  }
+
+  function loadDemoData() {
+    const today = getToday();
+
+    const demoMembers: Member[] = [
+      {
+        id: "demo-001",
+        name: "Ahmed Khan",
+        phone: "03001234567",
+        membership: "Monthly",
+        price: 3000,
+        paymentDate: today,
+        expiry: getDateOffset(26),
+        workoutPlan: "Chest & Triceps",
+        pin: "1234",
+        paymentHistory: [
+          {
+            id: "payment-demo-001",
+            amount: 3000,
+            date: today,
+            membership: "Monthly",
+          },
+          {
+            id: "payment-demo-002",
+            amount: 3000,
+            date: getDateOffset(-31),
+            membership: "Monthly",
+          },
+        ],
+      },
+      {
+        id: "demo-002",
+        name: "Hamza Ali",
+        phone: "03012345678",
+        membership: "Monthly",
+        price: 3000,
+        paymentDate: getDateOffset(-5),
+        expiry: getDateOffset(25),
+        workoutPlan: "Back & Biceps",
+        pin: "1234",
+        paymentHistory: [
+          {
+            id: "payment-demo-003",
+            amount: 3000,
+            date: getDateOffset(-5),
+            membership: "Monthly",
+          },
+        ],
+      },
+      {
+        id: "demo-003",
+        name: "Usman Raza",
+        phone: "03123456789",
+        membership: "Monthly",
+        price: 3000,
+        paymentDate: getDateOffset(-24),
+        expiry: getDateOffset(6),
+        workoutPlan: "Shoulders",
+        pin: "1234",
+        paymentHistory: [
+          {
+            id: "payment-demo-004",
+            amount: 3000,
+            date: getDateOffset(-24),
+            membership: "Monthly",
+          },
+        ],
+      },
+      {
+        id: "demo-004",
+        name: "Bilal Ahmed",
+        phone: "03211234567",
+        membership: "Monthly",
+        price: 3000,
+        paymentDate: getDateOffset(-40),
+        expiry: getDateOffset(-10),
+        workoutPlan: "Legs",
+        pin: "1234",
+        paymentHistory: [
+          {
+            id: "payment-demo-005",
+            amount: 3000,
+            date: getDateOffset(-40),
+            membership: "Monthly",
+          },
+        ],
+      },
+      {
+        id: "demo-005",
+        name: "Saad Hussain",
+        phone: "03331234567",
+        membership: "Monthly",
+        price: 3000,
+        paymentDate: getDateOffset(-12),
+        expiry: getDateOffset(18),
+        workoutPlan: "Full Body",
+        pin: "1234",
+        paymentHistory: [
+          {
+            id: "payment-demo-006",
+            amount: 3000,
+            date: getDateOffset(-12),
+            membership: "Monthly",
+          },
+        ],
+      },
+      {
+        id: "demo-006",
+        name: "Zain Malik",
+        phone: "03451234567",
+        membership: "Monthly",
+        price: 3000,
+        paymentDate: getDateOffset(-3),
+        expiry: getDateOffset(27),
+        workoutPlan: "Chest & Triceps",
+        pin: "1234",
+        paymentHistory: [
+          {
+            id: "payment-demo-007",
+            amount: 3000,
+            date: getDateOffset(-3),
+            membership: "Monthly",
+          },
+        ],
+      },
+    ];
+
+    const demoAttendance: AttendanceRecord[] = [
+      {
+        id: "attendance-demo-001",
+        memberId: "demo-001",
+        date: today,
+        time: getTimeOffset(2),
+      },
+      {
+        id: "attendance-demo-002",
+        memberId: "demo-002",
+        date: today,
+        time: getTimeOffset(3),
+      },
+      {
+        id: "attendance-demo-003",
+        memberId: "demo-003",
+        date: today,
+        time: getTimeOffset(5),
+      },
+      {
+        id: "attendance-demo-004",
+        memberId: "demo-005",
+        date: getDateOffset(-1),
+        time: "06:15 PM",
+      },
+      {
+        id: "attendance-demo-005",
+        memberId: "demo-001",
+        date: getDateOffset(-1),
+        time: "07:10 PM",
+      },
+      {
+        id: "attendance-demo-006",
+        memberId: "demo-002",
+        date: getDateOffset(-2),
+        time: "06:45 PM",
+      },
+      {
+        id: "attendance-demo-007",
+        memberId: "demo-003",
+        date: getDateOffset(-2),
+        time: "07:20 PM",
+      },
+      {
+        id: "attendance-demo-008",
+        memberId: "demo-005",
+        date: getDateOffset(-3),
+        time: "05:55 PM",
+      },
+      {
+        id: "attendance-demo-009",
+        memberId: "demo-001",
+        date: getDateOffset(-4),
+        time: "06:30 PM",
+      },
+      {
+        id: "attendance-demo-010",
+        memberId: "demo-002",
+        date: getDateOffset(-5),
+        time: "07:05 PM",
+      },
+      {
+        id: "attendance-demo-011",
+        memberId: "demo-001",
+        date: getDateOffset(-6),
+        time: "06:20 PM",
+      },
+      {
+        id: "attendance-demo-012",
+        memberId: "demo-005",
+        date: getDateOffset(-7),
+        time: "07:15 PM",
+      },
+    ];
+
+    const customWorkouts: CustomWorkout[] = [
+      {
+        id: "demo-custom-001",
+        name: "Ahmed's Strength Plan",
+        exercises: [
+          {
+            name: "Bench Press",
+            sets: 4,
+            reps: 8,
+          },
+          {
+            name: "Incline Dumbbell Press",
+            sets: 3,
+            reps: 10,
+          },
+          {
+            name: "Cable Fly",
+            sets: 3,
+            reps: 12,
+          },
+          {
+            name: "Tricep Pushdown",
+            sets: 3,
+            reps: 12,
+          },
+        ],
+      },
+    ];
+
+    demoMembers[0].customWorkoutId = "demo-custom-001";
+
+    localStorage.setItem(
+      "gym-town-members",
+      JSON.stringify(demoMembers)
+    );
+
+    localStorage.setItem(
+      "gym-town-attendance",
+      JSON.stringify(demoAttendance)
+    );
+
+    localStorage.setItem(
+      "gym-town-custom-workouts",
+      JSON.stringify(customWorkouts)
+    );
+
+    setMembers(demoMembers);
+    setAttendance(demoAttendance);
+    setDemoLoaded(true);
+  }
+
+  function clearDemoData() {
+    const savedMembers = localStorage.getItem("gym-town-members");
+
+    if (!savedMembers) {
+      return;
+    }
+
+    const currentMembers: Member[] =
+      JSON.parse(savedMembers);
+
+    const nonDemoMembers = currentMembers.filter(
+      (member) => !member.id.startsWith("demo-")
+    );
+
+    const savedAttendance =
+      localStorage.getItem("gym-town-attendance");
+
+    const currentAttendance: AttendanceRecord[] =
+      savedAttendance
+        ? JSON.parse(savedAttendance)
+        : [];
+
+    const nonDemoAttendance =
+      currentAttendance.filter(
+        (record) =>
+          !record.id.startsWith("attendance-demo-")
+      );
+
+    localStorage.setItem(
+      "gym-town-members",
+      JSON.stringify(nonDemoMembers)
+    );
+
+    localStorage.setItem(
+      "gym-town-attendance",
+      JSON.stringify(nonDemoAttendance)
+    );
+
+    const savedWorkouts = localStorage.getItem(
+      "gym-town-custom-workouts"
+    );
+
+    if (savedWorkouts) {
+      const workouts: CustomWorkout[] =
+        JSON.parse(savedWorkouts);
+
+      const nonDemoWorkouts =
+        workouts.filter(
+          (workout) =>
+            !workout.id.startsWith("demo-")
+        );
+
+      localStorage.setItem(
+        "gym-town-custom-workouts",
+        JSON.stringify(nonDemoWorkouts)
+      );
+    }
+
+    setMembers(nonDemoMembers);
+    setAttendance(nonDemoAttendance);
+    setDemoLoaded(false);
   }
 
   if (!isAdmin) {
@@ -180,134 +467,98 @@ export default function Admin() {
     );
   }
 
-  const today =
-    getToday();
+  const today = getToday();
 
   const todayAttendance =
     attendance.filter(
-      (record) =>
-        record.date === today
+      (record) => record.date === today
     );
 
-  const currentMonth =
-    today.slice(0, 7);
+  const currentMonth = today.slice(0, 7);
 
   const monthAttendance =
     attendance.filter(
       (record) =>
-        record.date.startsWith(
-          currentMonth
-        )
+        record.date.startsWith(currentMonth)
     );
 
   const activeMembers =
     members.filter(
       (member) =>
-        getStatus(
-          member.expiry
-        ) === "Active"
+        getStatus(member.expiry) === "Active"
     );
 
   const expiringMembers =
     members.filter(
       (member) =>
-        getStatus(
-          member.expiry
-        ) === "Expiring Soon"
+        getStatus(member.expiry) ===
+        "Expiring Soon"
     );
 
   const expiredMembers =
     members.filter(
       (member) =>
-        getStatus(
-          member.expiry
-        ) === "Expired"
+        getStatus(member.expiry) === "Expired"
     );
 
-  const renewalMembers =
-    members
-      .filter(
-        (member) =>
-          getStatus(
-            member.expiry
-          ) !== "Active"
-      )
-      .sort(
-        (a, b) =>
-          new Date(
-            a.expiry
-          ).getTime() -
-          new Date(
-            b.expiry
-          ).getTime()
-      );
-
-  const allPayments =
-    members.flatMap(
+  const renewalMembers = members
+    .filter(
       (member) =>
-        (
-          member.paymentHistory ||
-          []
-        ).map(
-          (payment) => ({
-            ...payment,
-            memberName:
-              member.name,
-            memberId:
-              member.id,
-          })
-        )
+        getStatus(member.expiry) !== "Active"
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.expiry).getTime() -
+        new Date(b.expiry).getTime()
     );
 
-  const recentPayments =
-    allPayments
-      .sort(
-        (a, b) =>
-          new Date(
-            b.date
-          ).getTime() -
-          new Date(
-            a.date
-          ).getTime()
+  const allPayments = members.flatMap(
+    (member) =>
+      (member.paymentHistory || []).map(
+        (payment) => ({
+          ...payment,
+          memberName: member.name,
+          memberId: member.id,
+        })
       )
-      .slice(0, 5);
+  );
 
-  const revenueThisMonth =
-    allPayments
-      .filter(
-        (payment) =>
-          payment.date.startsWith(
-            currentMonth
-          )
-      )
-      .reduce(
-        (total, payment) =>
-          total +
-          payment.amount,
-        0
-      );
+  const recentPayments = allPayments
+    .sort(
+      (a, b) =>
+        new Date(b.date).getTime() -
+        new Date(a.date).getTime()
+    )
+    .slice(0, 5);
 
-  const attendanceByMember =
-    members
-      .map((member) => ({
-        ...member,
-        checkIns:
-          monthAttendance.filter(
-            (record) =>
-              record.memberId ===
-              member.id
-          ).length,
-      }))
-      .filter(
-        (member) =>
-          member.checkIns > 0
-      )
-      .sort(
-        (a, b) =>
-          b.checkIns -
-          a.checkIns
-      )
-      .slice(0, 5);
+  const revenueThisMonth = allPayments
+    .filter(
+      (payment) =>
+        payment.date.startsWith(currentMonth)
+    )
+    .reduce(
+      (total, payment) =>
+        total + payment.amount,
+      0
+    );
+
+  const attendanceByMember = members
+    .map((member) => ({
+      ...member,
+      checkIns:
+        monthAttendance.filter(
+          (record) =>
+            record.memberId === member.id
+        ).length,
+    }))
+    .filter(
+      (member) => member.checkIns > 0
+    )
+    .sort(
+      (a, b) =>
+        b.checkIns - a.checkIns
+    )
+    .slice(0, 5);
 
   return (
     <main className="min-h-screen bg-gray-950 text-white p-6">
@@ -327,6 +578,41 @@ export default function Admin() {
           <p className="text-gray-500 mt-1">
             Gym management overview
           </p>
+
+        </div>
+
+        {/* Demo Data */}
+        <div className="mt-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 border border-gray-800">
+
+          <p className="text-gray-400 text-sm">
+            DEMO MODE
+          </p>
+
+          <h2 className="text-xl font-bold mt-1">
+            Populate Dashboard
+          </h2>
+
+          <p className="text-gray-500 text-sm mt-2 leading-relaxed">
+            Add realistic members, payments, workouts and attendance for your demo.
+          </p>
+
+          <button
+            onClick={loadDemoData}
+            className="w-full bg-white text-black rounded-2xl p-4 mt-4 font-semibold"
+          >
+            {demoLoaded
+              ? "Demo Data Loaded ✓"
+              : "Load Demo Data"}
+          </button>
+
+          {demoLoaded && (
+            <button
+              onClick={clearDemoData}
+              className="w-full bg-gray-800 text-gray-300 rounded-2xl p-4 mt-3 font-semibold"
+            >
+              Remove Demo Data
+            </button>
+          )}
 
         </div>
 
@@ -477,8 +763,7 @@ export default function Admin() {
 
           <div className="mt-5">
 
-            {attendanceByMember.length ===
-            0 ? (
+            {attendanceByMember.length === 0 ? (
               <p className="text-gray-500">
                 No attendance recorded this month.
               </p>
@@ -499,8 +784,7 @@ export default function Admin() {
                         </p>
 
                         <span className="text-gray-400 text-sm">
-                          {member.checkIns}{" "}
-                          check-ins
+                          {member.checkIns} check-ins
                         </span>
 
                       </div>
@@ -511,8 +795,7 @@ export default function Admin() {
                           className="h-full bg-white rounded-full"
                           style={{
                             width: `${Math.min(
-                              member.checkIns *
-                                10,
+                              member.checkIns * 10,
                               100
                             )}%`,
                           }}
@@ -597,8 +880,7 @@ export default function Admin() {
 
           <div className="mt-5 space-y-3">
 
-            {renewalMembers.length ===
-            0 ? (
+            {renewalMembers.length === 0 ? (
               <p className="text-gray-500">
                 No memberships need attention.
               </p>
@@ -626,8 +908,7 @@ export default function Admin() {
                           </p>
 
                           <p className="text-gray-500 text-sm mt-1">
-                            Expires{" "}
-                            {member.expiry}
+                            Expires {member.expiry}
                           </p>
 
                         </div>
@@ -642,9 +923,7 @@ export default function Admin() {
                             }
                           >
                             {days < 0
-                              ? `${Math.abs(
-                                  days
-                                )} days ago`
+                              ? `${Math.abs(days)} days ago`
                               : `${days} days left`}
                           </p>
 
@@ -674,8 +953,7 @@ export default function Admin() {
 
           <div className="mt-5 space-y-3">
 
-            {recentPayments.length ===
-            0 ? (
+            {recentPayments.length === 0 ? (
               <p className="text-gray-500">
                 No payments recorded.
               </p>
@@ -749,8 +1027,7 @@ export default function Admin() {
 
           <div className="mt-5 space-y-3">
 
-            {members.length ===
-            0 ? (
+            {members.length === 0 ? (
               <p className="text-gray-500">
                 No members yet.
               </p>
@@ -783,22 +1060,17 @@ export default function Admin() {
 
                         <span
                           className={`text-xs font-semibold ${
-                            getStatus(
-                              member.expiry
-                            ) ===
+                            getStatus(member.expiry) ===
                             "Active"
                               ? "text-green-400"
                               : getStatus(
                                   member.expiry
-                                ) ===
-                                "Expiring Soon"
+                                ) === "Expiring Soon"
                               ? "text-yellow-400"
                               : "text-red-400"
                           }`}
                         >
-                          {getStatus(
-                            member.expiry
-                          )}
+                          {getStatus(member.expiry)}
                         </span>
 
                       </div>
