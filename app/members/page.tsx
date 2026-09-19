@@ -90,12 +90,7 @@ export default function Members() {
       const loadedMembers: Member[] =
         JSON.parse(savedMembers);
 
-      setMembers(
-        loadedMembers.map((member) => ({
-          ...member,
-          pin: member.pin || "1234",
-        }))
-      );
+      setMembers(loadedMembers);
     }
 
     if (savedWorkouts) {
@@ -151,9 +146,7 @@ export default function Members() {
       return;
     }
 
-    if (
-      !/^\d{4}$/.test(pin)
-    ) {
+    if (!/^\d{4}$/.test(pin)) {
       return;
     }
 
@@ -192,7 +185,7 @@ export default function Members() {
 
     setName(member.name);
     setPhone(member.phone);
-    setPin(member.pin || "1234");
+    setPin(member.pin || "");
     setMembership(member.membership);
     setPrice(String(member.price));
     setPaymentDate(member.paymentDate);
@@ -217,9 +210,7 @@ export default function Members() {
       return;
     }
 
-    if (
-      !/^\d{4}$/.test(pin)
-    ) {
+    if (!/^\d{4}$/.test(pin)) {
       return;
     }
 
@@ -313,7 +304,6 @@ export default function Members() {
 
         return {
           ...item,
-          pin: item.pin || "1234",
           paymentDate:
             newPaymentDate,
           expiry:
